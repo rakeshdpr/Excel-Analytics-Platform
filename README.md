@@ -58,11 +58,6 @@ excel-analytics-platform/
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- Node.js (v16 or higher)
-- npm or yarn
-- MongoDB (local or cloud)
-
 ### Installation
 
 1. **Clone the repository**
