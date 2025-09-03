@@ -10,7 +10,7 @@ const app = express();
 // Security middleware
 app.use(helmet());
 app.use(cors({
-  origin: ['https://neon-tartufo-d0b247.netlify.app', 'https://excelanalytics-plateform.netlify.app', 'http://localhost:3000', 'http://192.168.0.101:3000'],
+  origin: ['https://excelanalyticsplateform.netlify.app', 'http://localhost:3000', 'http://192.168.0.101:3000'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
