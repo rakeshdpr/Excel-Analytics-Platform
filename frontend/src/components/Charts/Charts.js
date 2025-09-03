@@ -81,8 +81,6 @@ const Charts = () => {
 
   const handleChartTypeChange = (type) => {
     dispatch(setChartType(type));
-    // Don't clear axes for pie charts - they still need xAxis and yAxis
-    // The backend handles pie chart data aggregation differently
   };
 
   const handleAxisChange = (axis, value) => {
@@ -109,8 +107,6 @@ const Charts = () => {
 
   const getSuitableColumns = (axis) => {
     if (!columns.length) return [];
-
-    // Always return all columns for now since suitableFor property might not be properly set
     return columns;
   };
 
@@ -142,31 +138,31 @@ const Charts = () => {
   const is3DChart = chartType && chartType.startsWith('3d-');
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gray-900 text-white p-4">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center space-x-3 mb-4">
-            <BarChart3 className="h-8 w-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">Charts & Analytics</h1>
+            <BarChart3 className="h-8 w-8 text-blue-400" />
+            <h1 className="text-3xl font-bold text-white">Charts & Analytics</h1>
           </div>
-          <p className="text-gray-600">
+          <p className="text-gray-400">
             Create interactive charts and 3D visualizations from your Excel data with dynamic axis selection.
           </p>
         </div>
 
         {/* File Selection */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Select Data Source</h2>
+        <div className="bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
+          <h2 className="text-lg font-semibold text-teal-300 mb-4">Select Data Source</h2>
           {filesLoading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div>
             </div>
           ) : files.length === 0 ? (
             <div className="text-center py-8">
-              <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <p className="text-gray-500">No files uploaded yet</p>
-              <p className="text-sm text-gray-400">Upload Excel files from the Dashboard to start creating charts</p>
+              <FileText className="mx-auto h-12 w-12 text-gray-500 mb-4" />
+              <p className="text-gray-400">No files uploaded yet</p>
+              <p className="text-sm text-gray-500">Upload Excel files from the Dashboard to start creating charts</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -176,17 +172,17 @@ const Charts = () => {
                   onClick={() => handleFileSelect(file._id)}
                   className={`p-4 rounded-lg border-2 text-left transition-all ${
                     selectedFileId === file._id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      ? 'border-blue-500 bg-blue-900'
+                      : 'border-gray-700 hover:border-gray-600 hover:bg-gray-700'
                   }`}
                 >
                   <div className="flex items-start space-x-3">
                     <FileText className={`h-6 w-6 mt-1 ${
-                      selectedFileId === file._id ? 'text-blue-600' : 'text-gray-400'
+                      selectedFileId === file._id ? 'text-blue-400' : 'text-gray-500'
                     }`} />
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-medium truncate ${
-                        selectedFileId === file._id ? 'text-blue-900' : 'text-gray-900'
+                        selectedFileId === file._id ? 'text-white' : 'text-gray-300'
                       }`}>
                         {file.originalName}
                       </p>
@@ -209,12 +205,12 @@ const Charts = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Chart Controls */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="bg-gray-800 rounded-lg shadow-lg p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900">Chart Configuration</h3>
+                  <h3 className="text-lg font-semibold text-orange-300">Chart Configuration</h3>
                   <button
                     onClick={() => setShowAdvanced(!showAdvanced)}
-                    className="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-900"
+                    className="flex items-center space-x-2 text-sm text-gray-400 hover:text-white"
                   >
                     <Settings className="h-4 w-4" />
                     <span>Advanced</span>
@@ -224,22 +220,22 @@ const Charts = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-400 mb-2">
                       Selected File
                     </label>
-                    <div className="text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-md">
+                    <div className="text-sm text-white bg-gray-700 px-3 py-2 rounded-md">
                       {selectedFile ? selectedFile.originalName : 'No file selected'}
                     </div>
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-400 mb-2">
                       Sheet
                     </label>
                     <select
                       value={selectedSheet || ''}
                       onChange={(e) => handleSheetChange(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       {availableSheets.map(sheet => (
                         <option key={sheet} value={sheet}>{sheet}</option>
@@ -249,7 +245,7 @@ const Charts = () => {
                 </div>
 
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                  <label className="block text-sm font-medium text-gray-400 mb-3">
                     Chart Type
                   </label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -259,8 +255,8 @@ const Charts = () => {
                         onClick={() => handleChartTypeChange(type.id)}
                         className={`p-3 rounded-lg border-2 transition-all ${
                           chartType === type.id
-                            ? 'border-blue-500 bg-blue-50 text-blue-700'
-                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                            ? 'border-blue-500 bg-blue-900 text-white'
+                            : 'border-gray-700 hover:border-gray-600 hover:bg-gray-700'
                         }`}
                       >
                         <div className="flex flex-col items-center space-y-2">
@@ -274,13 +270,13 @@ const Charts = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-400 mb-2">
                       X-Axis {chartType === 'pie' || chartType === 'doughnut' ? '(Categories)' : ''}
                     </label>
                     <select
                       value={xAxis}
                       onChange={(e) => handleAxisChange('x', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="">Select X-Axis</option>
                       {getSuitableColumns('x').map(col => (
@@ -292,13 +288,13 @@ const Charts = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-400 mb-2">
                       Y-Axis {chartType === 'pie' || chartType === 'doughnut' ? '(Values)' : ''}
                     </label>
                     <select
                       value={yAxis}
                       onChange={(e) => handleAxisChange('y', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="">Select Y-Axis</option>
                       {getSuitableColumns('y').map(col => (
@@ -311,13 +307,13 @@ const Charts = () => {
 
                   {(chartType === '3d-scatter' || chartType === '3d-bar') && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-400 mb-2">
                         Z-Axis
                       </label>
                       <select
                         value={zAxis}
                         onChange={(e) => handleAxisChange('z', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
                         <option value="">Select Z-Axis</option>
                         {getSuitableColumns('z').map(col => (
@@ -331,11 +327,11 @@ const Charts = () => {
                 </div>
 
                 {showAdvanced && (
-                  <div className="border-t border-gray-200 pt-6">
-                    <h4 className="text-sm font-medium text-gray-900 mb-3">Advanced Chart Options</h4>
+                  <div className="border-t border-gray-700 pt-6">
+                    <h4 className="text-sm font-medium text-white mb-3">Advanced Chart Options</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-400 mb-2">
                           Chart Title
                         </label>
                         <input
@@ -343,7 +339,7 @@ const Charts = () => {
                           value={chartConfig.title}
                           onChange={(e) => dispatch(setChartConfig({ title: e.target.value }))}
                           placeholder="Enter chart title"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                       </div>
                       
@@ -355,7 +351,7 @@ const Charts = () => {
                             onChange={(e) => dispatch(setChartConfig({ showLegend: e.target.checked }))}
                             className="mr-2"
                           />
-                          <span className="text-sm text-gray-700">Show Legend</span>
+                          <span className="text-sm text-gray-400">Show Legend</span>
                         </label>
                         
                         <label className="flex items-center">
@@ -365,24 +361,24 @@ const Charts = () => {
                             onChange={(e) => dispatch(setChartConfig({ animation: e.target.checked }))}
                             className="mr-2"
                           />
-                          <span className="text-sm text-gray-700">Animations</span>
+                          <span className="text-sm text-gray-400">Animations</span>
                         </label>
                       </div>
                     </div>
                   </div>
                 )}
 
-                <div className="mt-6 pt-4 border-t border-gray-200">
+                <div className="mt-6 pt-4 border-t border-gray-700">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       {isChartReady() ? (
                         <>
-                          <Check className="h-5 w-5 text-green-500" />
-                          <span className="text-sm text-green-600 font-medium">Chart ready to render</span>
+                          <Check className="h-5 w-5 text-green-400" />
+                          <span className="text-sm text-green-400 font-medium">Chart ready to render</span>
                         </>
                       ) : (
                         <>
-                          <div className="h-5 w-5 rounded-full border-2 border-gray-300"></div>
+                          <div className="h-5 w-5 rounded-full border-2 border-gray-500"></div>
                           <span className="text-sm text-gray-500">Configure chart options</span>
                         </>
                       )}
@@ -394,16 +390,16 @@ const Charts = () => {
 
             {/* Chart Display */}
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="bg-gray-800 rounded-lg shadow-lg p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-lg font-semibold text-gray-900">Chart Preview</h2>
+                  <h2 className="text-lg font-semibold text-white">Chart Preview</h2>
                   <div className="flex items-center space-x-2">
                     {is3DChart ? (
-                      <Box className="h-5 w-5 text-purple-600" />
+                      <Box className="h-5 w-5 text-purple-400" />
                     ) : (
-                      <BarChart3 className="h-5 w-5 text-blue-600" />
+                      <BarChart3 className="h-5 w-5 text-blue-400" />
                     )}
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-gray-400">
                       {is3DChart ? '3D Visualization' : '2D Chart'}
                     </span>
                   </div>
@@ -433,8 +429,8 @@ const Charts = () => {
                 ) : (
                   <div className="flex items-center justify-center h-96">
                     <div className="text-center">
-                      <BarChart3 className="mx-auto h-16 w-16 text-gray-300 mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">Configure Your Chart</h3>
+                      <BarChart3 className="mx-auto h-16 w-16 text-gray-600 mb-4" />
+                      <h3 className="text-lg font-medium text-white mb-2">Configure Your Chart</h3>
                       <p className="text-gray-500">
                         Select chart type and axes from the controls on the left to start visualizing your data.
                       </p>
@@ -448,14 +444,14 @@ const Charts = () => {
 
         {/* Instructions */}
         {!selectedFileId && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <div className="bg-blue-900 bg-opacity-50 border border-blue-800 rounded-lg p-6">
             <div className="flex items-start space-x-3">
               <div className="flex-shrink-0">
-                <TrendingUp className="h-6 w-6 text-blue-600" />
+                <TrendingUp className="h-6 w-6 text-blue-400" />
               </div>
               <div>
-                <h3 className="text-lg font-medium text-blue-900 mb-2">Getting Started with Charts</h3>
-                <div className="text-blue-800 space-y-2">
+                <h3 className="text-lg font-medium text-blue-300 mb-2">Getting Started with Charts</h3>
+                <div className="text-blue-400 space-y-2">
                   <p>1. <strong>Select a file</strong> from your uploaded Excel files above</p>
                   <p>2. <strong>Choose a chart type</strong> (2D or 3D visualization)</p>
                   <p>3. <strong>Select your axes</strong> by choosing columns for X, Y, and Z (if 3D)</p>
