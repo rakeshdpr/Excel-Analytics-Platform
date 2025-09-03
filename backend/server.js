@@ -9,7 +9,11 @@ const app = express();
 
 // Security middleware
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: 'https://neon-tartufo-d0b247.netlify.app',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // Trust proxy for rate limiting (fixes X-Forwarded-For header issue)
 app.set('trust proxy', 1);
