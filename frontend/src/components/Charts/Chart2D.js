@@ -68,7 +68,7 @@ const Chart2D = ({ fileId, sheetName, chartType, xAxis, yAxis, onChartUpdate }) 
         setChartInstance(null);
       }
     };
-  }, [chartType, xAxis, yAxis]);
+  }, [chartType, xAxis, yAxis, chartInstance]);
 
   // Cleanup on unmount
   useEffect(() => {
