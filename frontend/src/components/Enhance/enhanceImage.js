@@ -2,7 +2,7 @@ import {
   MAX_PIXELS,
   enhancePlanes,
   fitPixels,
-  unsharpMask,
+  restoreFineStrokes,
   upscaleSize,
 } from './enhanceKernels';
 
@@ -223,10 +223,11 @@ export async function enhanceFile(file, { onProgress, onPreview, isCancelled } =
   const planes = await enhancePlanes(parts.r, parts.g, parts.b, parts.width, parts.height, (fraction) => {
     check();
     let stage = 'Sharpening';
-    if (fraction < 0.62) stage = 'Clearing soft focus';
-    else if (fraction < 0.74) stage = 'Reducing noise';
-    else if (fraction < 0.88) stage = 'Lifting local contrast';
-    else if (fraction < 0.98) stage = 'Sharpening';
+    if (fraction < 0.48) stage = 'Clearing soft focus';
+    else if (fraction < 0.78) stage = 'Clearing text';
+    else if (fraction < 0.86) stage = 'Reducing noise';
+    else if (fraction < 0.94) stage = 'Lifting local contrast';
+    else if (fraction < 0.99) stage = 'Sharpening';
     else stage = 'Finishing';
     report(10 + fraction * 68, stage);
   });
@@ -239,16 +240,15 @@ export async function enhanceFile(file, { onProgress, onPreview, isCancelled } =
     check();
     imageData = scaleImageData(imageData, next.width, next.height);
     parts = split(imageData);
-    const sharpened = await unsharpMask(
+    const sharpened = await restoreFineStrokes(
       parts.r,
       parts.g,
       parts.b,
       parts.width,
       parts.height,
-      { radius: 1, amount: 0.7, threshold: 1, cap: 28 },
       (fraction) => {
         check();
-        report(82 + fraction * 12, 'Sharpening the enlarged photo');
+        report(82 + fraction * 12, 'Clearing text');
       }
     );
     imageData = join(sharpened[0], sharpened[1], sharpened[2], parts.a, parts.width, parts.height);

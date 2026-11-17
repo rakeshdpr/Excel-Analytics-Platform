@@ -44,6 +44,27 @@ test('enhancePlanes separates blurred eyes instead of leaving one soft patch', a
   expect(separation(enhanced)).toBeGreaterThan(separation(blurred) + 12);
 });
 
+test('enhancePlanes restores thin text strokes', async () => {
+  const width = 84;
+  const height = 36;
+  const sharp = flat(width, height, 235);
+  const y0 = 10;
+  const y1 = 26;
+  for (let y = y0; y < y1; y += 1) {
+    for (let x = 6; x < width - 6; x += 1) {
+      if (x % 6 < 2) sharp[y * width + x] = 18;
+    }
+  }
+  const once = (await boxBlurRGB(sharp, sharp, sharp, width, height, 2))[0];
+  const blurred = (await boxBlurRGB(once, once, once, width, height, 1))[0];
+  const [enhanced] = await enhancePlanes(blurred, blurred, blurred, width, height);
+  const y = 18;
+  const strokeX = 6;
+  const gapX = 9;
+  const contrast = (plane) => plane[y * width + gapX] - plane[y * width + strokeX];
+  expect(contrast(enhanced)).toBeGreaterThan(contrast(blurred) + 18);
+});
+
 test('enhancePlanes makes a blurred pattern sharper', async () => {
   const width = 80;
   const height = 48;

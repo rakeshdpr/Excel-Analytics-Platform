@@ -187,8 +187,8 @@ const Enhance = () => {
         <h1>Clear up a blurry photo</h1>
         <p className="enhance-lead">
           Drop in a picture and this page pulls soft focus back into view, including
-          faces, then sharpens what is left. Small photos are enlarged. Everything runs
-          on this device.
+          faces and words in the photo, then sharpens what is left. Small photos are
+          enlarged. Everything runs on this device.
         </p>
 
         <p className="enhance-sr" role="status">{live}</p>

@@ -239,6 +239,92 @@ export async function restoreSoftFocus(r, g, b, width, height, onFraction) {
   return [or, og, ob];
 }
 
+/**
+ * A second, finer deconvolution. Letter strokes are only a pixel or two
+ * wide, so the face pass leaves them soft.
+ */
+export async function restoreFineStrokes(r, g, b, width, height, onFraction) {
+  const n = r.length;
+  const observed = new Float32Array(n);
+  for (let i = 0; i < n; i += 1) {
+    observed[i] = Math.max(1, lumaAt(r, g, b, i));
+  }
+
+  const estimate = await richardsonLucy(observed, width, height, 1, 5, (fraction) => {
+    if (onFraction) onFraction(fraction * 0.7);
+  });
+
+  const or = new Float32Array(n);
+  const og = new Float32Array(n);
+  const ob = new Float32Array(n);
+  for (let i = 0; i < n; i += 1) {
+    let gain = estimate[i] / observed[i];
+    if (gain > 1.65) gain = 1.65;
+    else if (gain < 0.62) gain = 0.62;
+    or[i] = r[i] * gain;
+    og[i] = g[i] * gain;
+    ob[i] = b[i] * gain;
+  }
+
+  const sharpened = await sharpenStrokes(or, og, ob, width, height, { amount: 1.25, cap: 40 }, (fraction) => {
+    if (onFraction) onFraction(0.7 + fraction * 0.3);
+  });
+  if (onFraction) onFraction(1);
+  return sharpened;
+}
+
+/**
+ * 3×3 sharpen that spends its strength on thin edges (letters, frames)
+ * and stays quiet on flat skin and sky.
+ */
+export async function sharpenStrokes(r, g, b, width, height, options = {}, onFraction) {
+  const amount = options.amount == null ? 1.15 : options.amount;
+  const cap = options.cap == null ? 40 : options.cap;
+  const n = r.length;
+  const luma = new Float32Array(n);
+  for (let i = 0; i < n; i += 1) luma[i] = lumaAt(r, g, b, i);
+
+  const or = new Float32Array(n);
+  const og = new Float32Array(n);
+  const ob = new Float32Array(n);
+  let deadline = performance.now() + 50;
+
+  for (let y = 0; y < height; y += 1) {
+    const row = y * width;
+    for (let x = 0; x < width; x += 1) {
+      const i = row + x;
+      if (x === 0 || y === 0 || x === width - 1 || y === height - 1) {
+        or[i] = r[i];
+        og[i] = g[i];
+        ob[i] = b[i];
+        continue;
+      }
+      const center = luma[i];
+      const cross = luma[i - 1] + luma[i + 1] + luma[i - width] + luma[i + width];
+      const diag = luma[i - width - 1] + luma[i - width + 1] + luma[i + width - 1] + luma[i + width + 1];
+      const neighborhood = (cross * 2 + diag) / 12;
+      const diff = center - neighborhood;
+      const mag = Math.abs(luma[i + 1] - luma[i - 1]) + Math.abs(luma[i + width] - luma[i - width]);
+      const weight = Math.min(1, mag / 22);
+      let delta = amount * diff * (0.3 + 0.7 * weight);
+      if (delta > cap) delta = cap;
+      else if (delta < -cap) delta = -cap;
+      or[i] = r[i] + delta;
+      og[i] = g[i] + delta;
+      ob[i] = b[i] + delta;
+    }
+    if (performance.now() >= deadline) {
+      if (onFraction) onFraction(y / height);
+      // eslint-disable-next-line no-await-in-loop
+      await yieldToMain();
+      deadline = performance.now() + 50;
+    }
+  }
+
+  if (onFraction) onFraction(1);
+  return [or, og, ob];
+}
+
 async function smoothRGB(r, g, b, width, height, radius, onFraction) {
   const mid = await boxBlurRGB(r, g, b, width, height, radius, (fraction) => {
     if (onFraction) onFraction(fraction * 0.5);
@@ -347,7 +433,7 @@ export function contrastCurve(r, g, b) {
 }
 
 /**
- * Restore soft focus first, then a light denoise, local contrast, and sharpen.
+ * Restore soft focus (faces), then thin strokes (text), then a light finish.
  * Fraction 0–1 is reported for progress UI.
  */
 export async function enhancePlanes(r, g, b, width, height, onFraction) {
@@ -355,17 +441,18 @@ export async function enhancePlanes(r, g, b, width, height, onFraction) {
     if (onFraction) onFraction(start + (end - start) * fraction);
   };
 
-  let planes = await restoreSoftFocus(r, g, b, width, height, report(0, 0.62));
-  planes = await denoiseMild(planes[0], planes[1], planes[2], width, height, report(0.62, 0.74));
-  planes = await localContrast(planes[0], planes[1], planes[2], width, height, report(0.74, 0.88));
+  let planes = await restoreSoftFocus(r, g, b, width, height, report(0, 0.48));
+  planes = await restoreFineStrokes(planes[0], planes[1], planes[2], width, height, report(0.48, 0.78));
+  planes = await denoiseMild(planes[0], planes[1], planes[2], width, height, report(0.78, 0.86));
+  planes = await localContrast(planes[0], planes[1], planes[2], width, height, report(0.86, 0.94));
   planes = await unsharpMask(
     planes[0],
     planes[1],
     planes[2],
     width,
     height,
-    { radius: 1, amount: 0.65, threshold: 1, cap: 28 },
-    report(0.88, 0.98)
+    { radius: 1, amount: 0.45, threshold: 1, cap: 22 },
+    report(0.94, 0.99)
   );
   contrastCurve(planes[0], planes[1], planes[2]);
   if (onFraction) onFraction(1);
