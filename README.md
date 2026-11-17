@@ -16,6 +16,7 @@
 - 📱 **Responsive Design**: Mobile-friendly interface with Tailwind CSS
 - 🔍 **Data Analytics**: Dynamic axis selection and real-time chart updates
 - 📊 **Dashboard**: Personal dashboard with upload history and analytics
+- ✨ **Photo enhancer**: Sharpen a blurry JPEG, PNG, or WebP in the browser at `/enhance`
 - 🛡️ **Security**: Helmet, CORS, rate limiting, and input validation
 
 ## 🛠️ Tech Stack

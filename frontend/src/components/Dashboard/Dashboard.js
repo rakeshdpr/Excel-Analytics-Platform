@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Upload,
@@ -8,6 +9,7 @@ import {
   Download,
   Trash2,
   TrendingUp,
+  Sparkles,
 } from "lucide-react";
 import { fetchFiles, uploadFile, deleteFile } from "../../store/slices/fileSlice";
 import { toast } from "react-hot-toast";
@@ -113,6 +115,22 @@ const Dashboard = () => {
           Welcome back! Manage your files and track analytics in style.
         </p>
       </div>
+
+      <Link
+        to="/enhance"
+        className="flex items-center justify-between gap-4 rounded-2xl border border-indigo-100 bg-white p-5 shadow-sm hover:border-indigo-300"
+      >
+        <span className="flex items-center gap-3 text-gray-900">
+          <Sparkles className="h-6 w-6 text-indigo-600" aria-hidden="true" />
+          <span>
+            <span className="block text-sm font-semibold">Blurry photo?</span>
+            <span className="block text-sm text-gray-500">
+              Sharpen it in your browser. The picture stays on this device.
+            </span>
+          </span>
+        </span>
+        <span className="text-sm font-semibold text-indigo-600 whitespace-nowrap">Open enhancer</span>
+      </Link>
 
       {/* Admin Request */}
       <AdminRequest />

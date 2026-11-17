@@ -269,6 +269,15 @@ const Register = () => {
             </div>
           </div>
         </form>
+        <p className="text-center text-sm text-blue-700">
+          <Link
+            to="/enhance"
+            className="font-semibold text-blue-600 hover:text-blue-500 transition-colors duration-300"
+          >
+            Enhance a blurry photo
+          </Link>
+          <span className="block mt-1">It runs in your browser.</span>
+        </p>
       </div>
     </div>
   );
