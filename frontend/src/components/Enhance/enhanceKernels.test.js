@@ -20,6 +20,30 @@ test('box blur spreads a single bright pixel', async () => {
   expect(out[4]).toBeCloseTo(1, 4);
 });
 
+test('enhancePlanes separates blurred eyes instead of leaving one soft patch', async () => {
+  const width = 96;
+  const height = 48;
+  const eyeY = 24;
+  const left = 30;
+  const right = 66;
+  const sharp = flat(width, height, 210);
+  for (let y = eyeY - 4; y <= eyeY + 4; y += 1) {
+    for (let x = left - 4; x <= left + 4; x += 1) sharp[y * width + x] = 25;
+    for (let x = right - 4; x <= right + 4; x += 1) sharp[y * width + x] = 25;
+  }
+  const once = (await boxBlurRGB(sharp, sharp, sharp, width, height, 2))[0];
+  const blurred = (await boxBlurRGB(once, once, once, width, height, 2))[0];
+  const [enhanced] = await enhancePlanes(blurred, blurred, blurred, width, height);
+
+  const separation = (plane) => {
+    const mid = plane[eyeY * width + Math.round((left + right) / 2)];
+    const eyes = (plane[eyeY * width + left] + plane[eyeY * width + right]) / 2;
+    return mid - eyes;
+  };
+
+  expect(separation(enhanced)).toBeGreaterThan(separation(blurred) + 12);
+});
+
 test('enhancePlanes makes a blurred pattern sharper', async () => {
   const width = 80;
   const height = 48;

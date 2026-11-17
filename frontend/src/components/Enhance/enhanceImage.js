@@ -223,8 +223,9 @@ export async function enhanceFile(file, { onProgress, onPreview, isCancelled } =
   const planes = await enhancePlanes(parts.r, parts.g, parts.b, parts.width, parts.height, (fraction) => {
     check();
     let stage = 'Sharpening';
-    if (fraction < 0.22) stage = 'Reducing noise';
-    else if (fraction < 0.5) stage = 'Lifting local contrast';
+    if (fraction < 0.62) stage = 'Clearing soft focus';
+    else if (fraction < 0.74) stage = 'Reducing noise';
+    else if (fraction < 0.88) stage = 'Lifting local contrast';
     else if (fraction < 0.98) stage = 'Sharpening';
     else stage = 'Finishing';
     report(10 + fraction * 68, stage);
@@ -244,7 +245,7 @@ export async function enhanceFile(file, { onProgress, onPreview, isCancelled } =
       parts.b,
       parts.width,
       parts.height,
-      { radius: 1, amount: 1.15, threshold: 0, cap: 48 },
+      { radius: 1, amount: 0.7, threshold: 1, cap: 28 },
       (fraction) => {
         check();
         report(82 + fraction * 12, 'Sharpening the enlarged photo');

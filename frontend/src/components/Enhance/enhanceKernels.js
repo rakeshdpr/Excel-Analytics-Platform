@@ -112,6 +112,133 @@ export async function boxBlurRGB(r, g, b, width, height, radius, onFraction) {
   return [rV, gV, bV];
 }
 
+/** One-channel box blur. Same edge handling as the RGB version. */
+async function boxBlurPlane(src, width, height, radius, onFraction) {
+  const rad = Math.round(radius);
+  if (rad < 1 || width < 2 || height < 2) {
+    if (onFraction) onFraction(1);
+    return clonePlane(src);
+  }
+
+  const n = width * height;
+  const horizontal = new Float32Array(n);
+  const inv = 1 / (rad * 2 + 1);
+  let deadline = performance.now() + 50;
+
+  for (let y = 0; y < height; y += 1) {
+    const row = y * width;
+    let sum = 0;
+    for (let k = -rad; k <= rad; k += 1) {
+      const x = k < 0 ? 0 : k >= width ? width - 1 : k;
+      sum += src[row + x];
+    }
+    for (let x = 0; x < width; x += 1) {
+      horizontal[row + x] = sum * inv;
+      const removeX = x - rad;
+      const addX = x + rad + 1;
+      const ri = row + (removeX < 0 ? 0 : removeX);
+      const ai = row + (addX >= width ? width - 1 : addX);
+      sum += src[ai] - src[ri];
+    }
+    if (performance.now() >= deadline) {
+      if (onFraction) onFraction((y / height) * 0.5);
+      // eslint-disable-next-line no-await-in-loop
+      await yieldToMain();
+      deadline = performance.now() + 50;
+    }
+  }
+
+  const vertical = new Float32Array(n);
+  for (let x = 0; x < width; x += 1) {
+    let sum = 0;
+    for (let k = -rad; k <= rad; k += 1) {
+      const y = k < 0 ? 0 : k >= height ? height - 1 : k;
+      sum += horizontal[y * width + x];
+    }
+    for (let y = 0; y < height; y += 1) {
+      const i = y * width + x;
+      vertical[i] = sum * inv;
+      const removeY = y - rad;
+      const addY = y + rad + 1;
+      const ri = (removeY < 0 ? 0 : removeY) * width + x;
+      const ai = (addY >= height ? height - 1 : addY) * width + x;
+      sum += horizontal[ai] - horizontal[ri];
+    }
+    if ((x & 31) === 0 && performance.now() >= deadline) {
+      if (onFraction) onFraction(0.5 + (x / width) * 0.5);
+      // eslint-disable-next-line no-await-in-loop
+      await yieldToMain();
+      deadline = performance.now() + 50;
+    }
+  }
+
+  if (onFraction) onFraction(1);
+  return vertical;
+}
+
+/**
+ * Richardson–Lucy deconvolution. This puts soft features (eyes, mouth,
+ * glasses) back instead of only outlining them.
+ */
+async function richardsonLucy(observed, width, height, radius, iterations, onFraction) {
+  let estimate = clonePlane(observed);
+  const n = observed.length;
+
+  for (let iter = 0; iter < iterations; iter += 1) {
+    // eslint-disable-next-line no-await-in-loop
+    const blurred = await boxBlurPlane(estimate, width, height, radius, (fraction) => {
+      if (onFraction) onFraction((iter + fraction * 0.5) / iterations);
+    });
+    const ratio = new Float32Array(n);
+    for (let i = 0; i < n; i += 1) {
+      const denom = blurred[i] < 1 ? 1 : blurred[i];
+      ratio[i] = observed[i] / denom;
+    }
+    // eslint-disable-next-line no-await-in-loop
+    const correction = await boxBlurPlane(ratio, width, height, radius, (fraction) => {
+      if (onFraction) onFraction((iter + 0.5 + fraction * 0.5) / iterations);
+    });
+    for (let i = 0; i < n; i += 1) {
+      let next = estimate[i] * correction[i];
+      if (next < 0) next = 0;
+      else if (next > 255) next = 255;
+      estimate[i] = next;
+    }
+  }
+
+  if (onFraction) onFraction(1);
+  return estimate;
+}
+
+export async function restoreSoftFocus(r, g, b, width, height, onFraction) {
+  const n = r.length;
+  const observed = new Float32Array(n);
+  for (let i = 0; i < n; i += 1) {
+    observed[i] = Math.max(1, lumaAt(r, g, b, i));
+  }
+
+  const longEdge = Math.max(width, height);
+  const radius = longEdge >= 1400 ? 3 : 2;
+  const estimate = await richardsonLucy(observed, width, height, radius, 8, (fraction) => {
+    if (onFraction) onFraction(fraction * 0.92);
+  });
+
+  const or = new Float32Array(n);
+  const og = new Float32Array(n);
+  const ob = new Float32Array(n);
+  for (let i = 0; i < n; i += 1) {
+    let gain = estimate[i] / observed[i];
+    if (gain > 1.85) gain = 1.85;
+    else if (gain < 0.55) gain = 0.55;
+    or[i] = r[i] * gain;
+    og[i] = g[i] * gain;
+    ob[i] = b[i] * gain;
+  }
+
+  if (onFraction) onFraction(1);
+  return [or, og, ob];
+}
+
 async function smoothRGB(r, g, b, width, height, radius, onFraction) {
   const mid = await boxBlurRGB(r, g, b, width, height, radius, (fraction) => {
     if (onFraction) onFraction(fraction * 0.5);
@@ -135,8 +262,8 @@ export async function denoiseMild(r, g, b, width, height, onFraction) {
   const or = new Float32Array(n);
   const og = new Float32Array(n);
   const ob = new Float32Array(n);
-  const strength = 0.45;
-  const edge = 8;
+  const strength = 0.22;
+  const edge = 14;
 
   for (let i = 0; i < n; i += 1) {
     const diff = Math.abs(lumaAt(r, g, b, i) - lumaAt(br, bg, bb, i));
@@ -154,7 +281,7 @@ export async function denoiseMild(r, g, b, width, height, onFraction) {
 /** Widen the gap between each pixel and a wide local average (clarity). */
 export async function localContrast(r, g, b, width, height, onFraction) {
   const radius = Math.max(4, Math.min(28, Math.round(Math.min(width, height) / 36)));
-  const amount = 0.55;
+  const amount = 0.32;
   const [br, bg, bb] = await smoothRGB(r, g, b, width, height, radius, onFraction);
   const n = r.length;
   const or = new Float32Array(n);
@@ -220,7 +347,7 @@ export function contrastCurve(r, g, b) {
 }
 
 /**
- * Denoise, local contrast, then two unsharp-mask passes.
+ * Restore soft focus first, then a light denoise, local contrast, and sharpen.
  * Fraction 0–1 is reported for progress UI.
  */
 export async function enhancePlanes(r, g, b, width, height, onFraction) {
@@ -228,28 +355,17 @@ export async function enhancePlanes(r, g, b, width, height, onFraction) {
     if (onFraction) onFraction(start + (end - start) * fraction);
   };
 
-  let planes = await denoiseMild(r, g, b, width, height, report(0, 0.22));
-  planes = await localContrast(planes[0], planes[1], planes[2], width, height, report(0.22, 0.5));
-
-  const longEdge = Math.max(width, height);
-  const coarseRadius = longEdge >= 1400 ? 4 : longEdge >= 640 ? 3 : 2;
+  let planes = await restoreSoftFocus(r, g, b, width, height, report(0, 0.62));
+  planes = await denoiseMild(planes[0], planes[1], planes[2], width, height, report(0.62, 0.74));
+  planes = await localContrast(planes[0], planes[1], planes[2], width, height, report(0.74, 0.88));
   planes = await unsharpMask(
     planes[0],
     planes[1],
     planes[2],
     width,
     height,
-    { radius: coarseRadius, amount: 1.85, threshold: 1, cap: 72 },
-    report(0.5, 0.8)
-  );
-  planes = await unsharpMask(
-    planes[0],
-    planes[1],
-    planes[2],
-    width,
-    height,
-    { radius: 1, amount: 1.05, threshold: 0, cap: 48 },
-    report(0.8, 0.98)
+    { radius: 1, amount: 0.65, threshold: 1, cap: 28 },
+    report(0.88, 0.98)
   );
   contrastCurve(planes[0], planes[1], planes[2]);
   if (onFraction) onFraction(1);
