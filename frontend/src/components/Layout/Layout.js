@@ -8,7 +8,8 @@ import {
   User, 
   LogOut, 
   BarChart3,
-  Shield
+  Shield,
+  Sparkles
 } from 'lucide-react';
 import { logoutUser } from '../../store/slices/authSlice';
 
@@ -28,6 +29,7 @@ const Layout = () => {
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Profile', href: '/profile', icon: User },
     { name: 'Charts', href: '/charts', icon: BarChart3 },
+    { name: 'Enhance photo', href: '/enhance', icon: Sparkles },
   ];
 
   const adminNavigation = [

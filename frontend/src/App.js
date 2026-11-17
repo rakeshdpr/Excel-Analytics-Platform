@@ -14,6 +14,7 @@ import Dashboard from './components/Dashboard/Dashboard';
 import Profile from './components/Profile/Profile';
 import AdminPanel from './components/Admin/AdminPanel';
 import Charts from './components/Charts/Charts';
+import Enhance from './components/Enhance/Enhance';
 
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import AdminRoute from './components/Auth/AdminRoute';
@@ -40,7 +41,10 @@ function App() {
     document.documentElement.classList.toggle('dark', savedTheme === 'dark');
   }, [theme]);
 
-  if (loading) {
+  const onEnhanceRoute = window.location.pathname === '/enhance'
+    || window.location.pathname.startsWith('/enhance/');
+
+  if (loading && !onEnhanceRoute) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -89,6 +93,7 @@ function App() {
             path="/register" 
             element={isAuthenticated ? <Navigate to="/dashboard" /> : <Register />} 
           />
+          <Route path="/enhance" element={<Enhance />} />
           
           {/* Protected Routes */}
           <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
